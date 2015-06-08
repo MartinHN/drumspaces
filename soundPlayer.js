@@ -7,13 +7,20 @@ var sounds;
 var explorationPlayer;
 // array storing  sounds Classes (Kick,HH,....)
 var soundClasses;
+// actual mp3 have 50ms silence in the begining due to the converter (sox)
+// for now it's preferable to use wave files
 var useMp3 = false;
 
 
+var localAudioFilePath = "samples/";
+
+
 var loadAll = function(){
-	bpm = 80;
+	
 	loadPlayer();
-	loadMidi("jazz");
+	loadMidiIdx(0);
+	checkLocalSample();
+	loadDefaultMidiMap();
 	midiMap = new Array();
 	midiMap[0]="Kick"
 	midiMap[1]="Snare"
@@ -46,7 +53,7 @@ var loadPlayer = function(){
 		   url: "",//"samples/" + type + "/"+ audioFiles[type][0],
 		   volume: 70,
 		   multiShot: true,
-		   autoLoad: true,
+		   autoLoad: false,
 		   autoPlay : false,
 		   stream: true
 		 });
@@ -83,26 +90,68 @@ var playOne = function(type,fname){
 
 var getSoundPath = function(type ,_fname){
 	var fname = "";
+	
 	if(_fname !== undefined) {
-		fname =  _fname.substr(0,_fname.lastIndexOf('.'));
-	} 
+		
+		var idx = _fname.lastIndexOf('.');
+		if(idx> 0 ){fname =  _fname.substr(0,idx);}
+		else {fname = _fname;}
+	
+	
 	/* otherwise error when trying to reset midimap to selectedSample
 	on mouseout a not selected sample
 	(when rhythmIsOn and mouseovered samples are played on rhythm instead of the selected one) */
-
-
 	if (useMp3){
-		return "samples/mp3/" + type + "/"+ fname+'.mp3'
+		return localAudioFilePath+"mp3/" + type + "/"+ fname+'.mp3'
 	}
 	else{
-		return "samples/wav/" + type + "/"+ fname+'.wav'
+		return localAudioFilePath+"wav/" + type + "/"+ fname+'.wav'
 	}
 
+
+}
+
+}
+var checkLocalSample = function(){
+
+	var oldPlayer = soundManager.getSoundById('testPlayer');
+	if(oldPlayer!=undefined){
+	oldPlayer.destruct();
+	}
+	
+	var testPlayer = new soundManager.createSound({
+		   id: "testPlayer",
+		   url: getSoundPath(Object.keys(audioFiles)[0],audioFiles[Object.keys(audioFiles)[0]][0]),
+		   volume: 70,
+		   multiShot: false,
+		   autoLoad: true,
+		   stream: true,
+		   onload:function(e){
+		   	if(e===false){
+				localAudioFilePath = "file://"+window.prompt("enter local path for folder (containing wav or mp3 subfolder)\nyou need to grant chrome for local access","");
+	      		checkLocalSample();
+			}
+			else{
+				console.log("found");
+			}
+		   }
+		 });
+
+}
+
+
+var loadDefaultMidiMap = function(){
+sounds["Kick"].url = getSoundPath("Default","Kick");
+sounds["Snare"].url = getSoundPath("Default","Snare");
+sounds["OpenHH"].url = getSoundPath("Default","OpenHH");
+sounds["ClosedHH"].url = getSoundPath("Default","ClosedHH");
 }
 var setMidiMap = function(type,fname){
-
-	sounds[type].url = getSoundPath(type,fname);//"samples/" + type + "/"+ name;
-	if(fname!="")sounds[type].load();
+if(fname!== undefined){
+	// sounds[type].stop();
+	sounds[type].url = getSoundPath(type,fname);
+	sounds[type].load();
+}
 }
 
 
@@ -198,14 +247,17 @@ else{
 
 
 
-
-		
-
+var loadMidiIdx = function(i){
+	var midiToLoad= Object.keys(midiFiles)[i%Object.keys(midiFiles).length] ;
+	 loadMidi(midiToLoad) ;
+	 console.log("loading midi : "+midiToLoad)
+}
+var getNumMidiFiles = function(){return midiFiles.key().length;}
 
 var loadMidi = function(midiName){
-	midi.loadFile('data:audio/midi;base64,'+midiFiles[midiName],function(){
-		
-		
+	
+	midi.loadFile('data:audio/midi;base64,'+midiFiles[midiName].data,function(){
+		bpm = midiFiles[midiName].bpm;
 		noteOn = new Array();
 		noteOff = new Array();
 		for(var i = 0 ; i < 4 ; i ++){noteOn[i] = new Array();noteOff[i] = new Array();}
@@ -217,8 +269,6 @@ var loadMidi = function(midiName){
 		var runningCount = [0,0,0,0];
 
 		for( var i = 0 ; i < midi.data.length ; i++){
-			//
-
 			var audioType = midi.data[i][0].event["channel"];
 			if(audioType<4){
 				if (midi.data[i][0].event["subtype"] == "noteOn"  ){
@@ -227,6 +277,7 @@ var loadMidi = function(midiName){
 					note.audioType =audioType;
 					note.idx = nIdx[note.audioType];
 					note.deltaTime = deltaCount[note.audioType] + midi.data[i][0].event["deltaTime"];
+					note.startTime
 					runningCount[note.audioType]+= note.deltaTime ;
 					note.velocity = midi.data[i][0].event["velocity"];
 					deltaCount[note.audioType]=0;
@@ -250,12 +301,8 @@ var loadMidi = function(midiName){
 		}
 		// hack as midi doesent include loop length info : take the next 4 beat roundness
 		loopLength = (Math.ceil((lastnoteOff - 1)/(4.0*midi.ticksPerBeats))  ) *(4*midi.ticksPerBeats);
-		
 		lastSilence = loopLength - runningCount[lastNoteType]  ;
 		
-		
-		
-			
 	})	
 
 }

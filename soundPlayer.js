@@ -114,28 +114,28 @@ var getSoundPath = function(type ,_fname){
 }
 var checkLocalSample = function(){
 
-	var oldPlayer = soundManager.getSoundById('testPlayer');
-	if(oldPlayer!=undefined){
-	oldPlayer.destruct();
-	}
+	// var oldPlayer = soundManager.getSoundById('testPlayer');
+	// if(oldPlayer!=undefined){
+	// oldPlayer.destruct();
+	// }
 	
-	var testPlayer = new soundManager.createSound({
-		   id: "testPlayer",
-		   url: getSoundPath(Object.keys(audioFiles)[0],audioFiles[Object.keys(audioFiles)[0]][0]),
-		   volume: 70,
-		   multiShot: false,
-		   autoLoad: true,
-		   stream: true,
-		   onload:function(e){
-		   	if(e===false){
-				localAudioFilePath = "file://"+window.prompt("enter local path for folder (containing wav or mp3 subfolder)\nyou need to grant chrome for local access","");
-	      		checkLocalSample();
-			}
-			else{
-				console.log("found");
-			}
-		   }
-		 });
+	// var testPlayer = new soundManager.createSound({
+	// 	   id: "testPlayer",
+	// 	   url: getSoundPath(Object.keys(audioFiles)[0],audioFiles[Object.keys(audioFiles)[0]][0]),
+	// 	   volume: 70,
+	// 	   multiShot: false,
+	// 	   autoLoad: true,
+	// 	   stream: true,
+	// 	   onload:function(e){
+	// 	   	if(e===false){
+	// 			localAudioFilePath = "file://"+window.prompt("enter local path for folder (containing wav or mp3 subfolder)\nyou need to grant chrome for local access","");
+	//       		checkLocalSample();
+	// 		}
+	// 		else{
+	// 			console.log("found");
+	// 		}
+	// 	   }
+	// 	 });
 
 }
 

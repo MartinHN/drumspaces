@@ -9,7 +9,7 @@ var explorationPlayer;
 var soundClasses;
 // actual mp3 have 50ms silence in the begining due to the converter (sox)
 // for now it's preferable to use wave files
-var useMp3 = false;
+var useMp3 = true;
 
 
 var localAudioFilePath = "samples/";
